@@ -1,0 +1,5 @@
+# Optional host port for local use. Coolify only needs docker-compose.yml.
+services:
+  web:
+    ports:
+      - "127.0.0.1:8080:80"
