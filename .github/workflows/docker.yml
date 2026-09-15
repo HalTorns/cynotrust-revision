@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  SITE_PASSWORD: integration-test-password-only
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
@@ -18,13 +20,9 @@ jobs:
           docker compose build --pull
       - name: Start and wait for health check
         run: docker compose up -d --wait --wait-timeout 90
-      - name: Verify site and static files over HTTP
+      - name: Verify password protection and site over HTTP
         run: |
-          docker compose exec -T web nginx -t
-          docker compose exec -T web wget -qO- http://127.0.0.1/ | grep -q 'CynoTrust Formation'
-          for path in app.js data.js style.css assets/20_0.png assets/23_0.png assets/27_0.png assets/41_1.png assets/44_0.png assets/49_0.png; do
-            docker compose exec -T web wget -qO /dev/null "http://127.0.0.1/$path"
-          done
+          docker compose exec -T web node --input-type=module < tests/http.mjs
       - name: Container logs
         if: always()
         run: docker compose logs --no-color

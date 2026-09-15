@@ -14,18 +14,20 @@ Créer une **Application depuis un dépôt Git** (pas un service Compose vide), 
 | Base Directory | `/` |
 | Docker Compose Location | `/docker-compose.yml` |
 | Service HTTP | `web` |
-| Port interne | `80` |
-| Domains for web | `https://revision.truffosphere.fr` |
+| Port interne | `8080` |
+| Domains for web | `https://revision.truffosphere.fr:8080` |
 
 1. Faire pointer le DNS de `revision.truffosphere.fr` vers le serveur Coolify.
 2. Charger/enregistrer la configuration Compose, puis attribuer le domaine au service `web`.
-3. Cliquer sur **Deploy**. Coolify construit l’image Nginx, route les requêtes vers le port 80 et gère HTTPS.
+3. Cliquer sur **Deploy**. Coolify construit l’image Node.js, route les requêtes vers le port 8080 et gère HTTPS.
 
-Aucun secret, variable d’environnement ou volume persistant n’est nécessaire. Le port n’est pas publié sur l’hôte : le proxy Coolify accède directement au service. Le healthcheck utilise `/healthz`. Le fichier `docker-compose.local.yml` sert uniquement aux essais locaux.
+Configurer obligatoirement `SITE_PASSWORD` dans les variables d’environnement Coolify avec le mot de passe partagé choisi. Ne pas mettre ce mot de passe dans le dépôt. Aucun volume persistant n’est nécessaire. Le port n’est pas publié sur l’hôte : le proxy Coolify accède directement au service. Le healthcheck utilise `/healthz`. Le fichier `docker-compose.local.yml` sert uniquement aux essais locaux.
 
 [Documentation Coolify : déploiement Docker Compose depuis Git](https://coolify.io/docs/applications/builds/docker-compose).
 
 ## Essayer en local avec Docker
+
+Copier `.env.example` en `.env` et y définir `SITE_PASSWORD`, puis :
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
@@ -44,12 +46,12 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml down
 - `dist/app.js` : exercices et navigation dans les images.
 - `dist/data.js` : légendes, descriptions et coordonnées des repères.
 - `dist/assets/` : six images utilisées.
-- `nginx.conf` : serveur HTTP, revalidation du cache et healthcheck.
+- `server.mjs` : serveur HTTP, page de connexion, sessions et healthcheck.
 
 Après une modification, pousser sur `main` puis redéployer dans Coolify (ou activer les déploiements automatiques via son intégration GitHub).
 
-Le site est autonome : il ne dépend ni de Sites ni d’une API OpenAI. Les réponses sont conservées uniquement pendant la session de la page. Il n’intègre pas de connexion utilisateur ; l’accès dépend du domaine et des protections configurées sur ton hébergement.
+Le site est autonome : il ne dépend ni de Sites ni d’une API OpenAI. Les réponses sont conservées uniquement pendant la session de la page. Un mot de passe partagé protège les pages et les images. La session dure 12 heures et est invalidée au redémarrage du service ou après changement du mot de passe et redéploiement. Le cookie est HttpOnly, SameSite=Lax et Secure en HTTPS derrière le proxy. Le dépôt GitHub public reste consultable : cette protection concerne le site déployé.
 
 ## Vérification automatique
 
-GitHub Actions construit l’image, démarre le service Compose, attend son état sain, vérifie la configuration Nginx et contrôle les pages, scripts et six images par HTTP.
+GitHub Actions construit l’image, démarre le service Compose, attend son état sain, vérifie le refus des accès sans connexion, la connexion, les cookies altérés, la limitation des tentatives et les six images par HTTP.

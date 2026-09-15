@@ -1,6 +1,9 @@
-FROM nginx:stable-alpine
+FROM node:24-alpine
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY dist/ /usr/share/nginx/html/
+WORKDIR /app
+COPY server.mjs ./
+COPY dist/ ./dist/
+USER node
 
-EXPOSE 80
+EXPOSE 8080
+CMD ["node", "server.mjs"]
